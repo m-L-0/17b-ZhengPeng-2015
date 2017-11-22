@@ -142,6 +142,10 @@ def load_mnist():
     x_test = x_test.reshape(-1, 28, 28, 1).astype('float32') / 255.
     y_train = to_categorical(y_train.astype('float32'))
     y_test = to_categorical(y_test.astype('float32'))
+    print("**" * 10)
+    for i in [x_train, x_test, y_train, y_test]:
+        print(i.shape)
+    print("**" * 10)
     return (x_train, y_train), (x_test, y_test)
 
 
