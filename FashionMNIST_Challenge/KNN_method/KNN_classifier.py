@@ -5,12 +5,8 @@ import gzip
 import os
 
 
-def load_mnist(path):
-    # from tensorflow.examples.tutorials.mnist import input_data
-    # mnist = input_data.read_data_sets('../MNIST_data/fashion', one_hot=True)
-    # read data
-    import gzip
-    import pandas as pd
+def load_data(path):
+    # read data from the path folder
     from sklearn.utils import shuffle
     train_file = gzip.GzipFile(path + "fashion-mnist_train.csv.tar.gz", "r")
     with open(path + "fashion-mnist_train.csv", 'wb') as f:
@@ -37,11 +33,24 @@ def load_mnist(path):
 
 
 def knn(data):
-    train_x, train_y, test_x, test_y = data
-    train_x = train_x[:5000].reshape(train_x[:5000].shape[0], 784)
-    train_y = train_y[:5000].reshape(train_y[:5000].shape[0])
-    test_x = test_x[:200].reshape(test_x[:200].shape[0], 784)
-    test_y = test_y[:200].reshape(test_y[:200].shape[0])
+    # extract part of the data and do the transformation on the y data
+    train_x = data[0][:].reshape(data[0][:].shape[0], 784)
+    train_y = data[1][:].reshape(data[1][:].shape[0])
+    test_x = data[2][:].reshape(data[2][:].shape[0], 784)
+    test_y = data[3][:].reshape(data[3][:].shape[0])
+
+    t_y = []
+    for j in range(train_y.shape[0]):
+        t = train_y[j]
+        t_y.append(np.zeros((10)))
+        t_y[j][int(t)] = 1
+    train_y = np.array(t_y)
+    t_y = []
+    for j in range(test_y.shape[0]):
+        t = test_y[j]
+        t_y.append(np.zeros((10)))
+        t_y[j][int(t)] = 1
+    test_y = np.array(t_y)
 
     xtr = tf.placeholder(tf.float32, [None, 784])
     xte = tf.placeholder(tf.float32, [784])
@@ -58,15 +67,15 @@ def knn(data):
         right = 0
         for i in range(200):
             ansIndex = sess.run(pred, {xtr: train_x, xte: test_x[i, :]})
-            print('train:', np.argmax(train_y[ansIndex]))
+            print('train:', np.argmax(train_y[ansIndex]), end=", ")
             print('test: ', np.argmax(test_y[i]))
             if np.argmax(test_y[i]) == np.argmax(train_y[ansIndex]):
                 right += 1.0
-        accracy = right/200.0
-        print(accracy)
+        accracy = right / 200.0
+        print("accracy: {}".format(accracy))
 
 
 if __name__ == "__main__":
     path = r"../MNIST_data/fashion_csv/"
-    mnist_data = load_mnist(path)
+    mnist_data = load_data(path)
     knn(mnist_data)
