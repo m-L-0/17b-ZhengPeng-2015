@@ -3,13 +3,14 @@ import tensorflow as tf
 import time
 import os
 import cv2
+from sklearn.utils import shuffle
 
 
 # 图片存放位置
 PATH_DES = [
-    r'data_tfrecords/integers_tfrecords/integers.tfrecords',
-    r'data_tfrecords/alphabets_tfrecords/alphabets.tfrecords',
-    r'data_tfrecords/Chinese_letters_tfrecords/Chinese_letters.tfrecords'
+    r'data_tfrecords/integers_tfrecords/',
+    r'data_tfrecords/alphabets_tfrecords/',
+    r'data_tfrecords/Chinese_letters_tfrecords/'
     ]
 PATH_RES = [r'data/integers/',
             r'data/alphabets/',
@@ -108,7 +109,7 @@ NUM_VALIDARION = [sum([len(os.listdir(r + i))
 
 
 # 读取图片
-def read_images(path_res, label_ref):
+def read_images(path_res, label_ref, num_validation):
     imgs = []
     labels = []
     path_res_dirs = sorted(os.listdir(path_res))
@@ -155,8 +156,16 @@ def read_images(path_res, label_ref):
             imgs.append((img_current_threshed // 255).astype(np.uint8))
             labels.append(np.uint8(label_ref[label_current]))
     imgs = np.array(imgs)
+    imgs = imgs.reshape(imgs.shape[0], -1)
     labels = np.array(labels)
-    return imgs, labels
+    labels = labels.reshape(labels.shape[0], -1)
+    data = np.hstack((labels, imgs))
+    data = shuffle(data)
+    train_labels = data[:num_validation, 0]
+    train_images = data[:num_validation, 1:]
+    test_labels = data[num_validation:, 0]
+    test_images = data[num_validation:, 1:]
+    return train_labels, train_images, test_labels, test_images
 
 
 # 生成整数型的属性
@@ -195,10 +204,12 @@ def main():
     start_time = time.time()
     for i in range(len(PATH)):
         print('reading images from {} begin'.format(PATH_RES[i]))
-        train_images, train_labels = read_images(PATH_RES[i], label_ref[i])
+        data = read_images(PATH_RES[i], label_ref[i], NUM_VALIDARION[i])
+        train_labels, train_images, test_labels, test_images = data
         # Slice data here.
         print('convert to tfrecords into {} begin'.format(PATH_DES[i]))
-        convert(train_images, train_labels, PATH_DES[i])
+        convert(train_images, train_labels, PATH_DES[i]+"train.tfrecords")
+        convert(test_images, test_labels, PATH_DES[i]+"test.tfrecords")
     duration = time.time() - start_time
     print('Converting end , total cost = %d sec' % duration)
 

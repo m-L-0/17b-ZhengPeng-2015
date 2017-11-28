@@ -7,14 +7,20 @@ import sys
 
 # 图片存放位置
 PATH_RES = [
-    r'data_tfrecords/integers_tfrecords/integers.tfrecords',
-    r'data_tfrecords/alphabets_tfrecords/alphabets.tfrecords',
-    r'data_tfrecords/Chinese_letters_tfrecords/Chinese_letters.tfrecords'
+    r'data_tfrecords/integers_tfrecords/train.tfrecords',
+    r'data_tfrecords/integers_tfrecords/test.tfrecords',
+    r'data_tfrecords/alphabets_tfrecords/train.tfrecords',
+    r'data_tfrecords/alphabets_tfrecords/test.tfrecords',
+    r'data_tfrecords/Chinese_letters_tfrecords/train.tfrecords'
+    r'data_tfrecords/Chinese_letters_tfrecords/test.tfrecords'
     ]
 PATH_DES = [
-    r'imgs_from_tfrecords/integers/',
-    r'imgs_from_tfrecords/alphabets/',
-    r'imgs_from_tfrecords/Chinese_letters/'
+    r'imgs_from_tfrecords/integers/train/',
+    r'imgs_from_tfrecords/integers/test/',
+    r'imgs_from_tfrecords/alphabets/train/',
+    r'imgs_from_tfrecords/alphabets/test/',
+    r'imgs_from_tfrecords/Chinese_letters/train/'
+    r'imgs_from_tfrecords/Chinese_letters/test/'
     ]
 
 PATH = list(zip(PATH_RES, PATH_DES))
