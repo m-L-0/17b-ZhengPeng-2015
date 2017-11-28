@@ -1,10 +1,23 @@
 import os
 import shutil
 import tensorflow as tf
-import numpy as np
 import time
 import sys
-import matplotlib.pyplot as plt
+
+
+# 图片存放位置
+PATH_RES = [
+    r'data_tfrecords/integers_tfrecords/integers.tfrecords',
+    r'data_tfrecords/alphabets_tfrecords/alphabets.tfrecords',
+    r'data_tfrecords/Chinese_letters_tfrecords/Chinese_letters.tfrecords'
+    ]
+PATH_DES = [
+    r'imgs_from_tfrecords/integers/',
+    r'imgs_from_tfrecords/alphabets/',
+    r'imgs_from_tfrecords/Chinese_letters/'
+    ]
+
+PATH = list(zip(PATH_RES, PATH_DES))
 
 
 def tfrecord2jpg(path_res, path_des):
@@ -46,6 +59,7 @@ def tfrecord2jpg(path_res, path_des):
                 if len(label_count) == 10 and label in label_count:
                     # prevent reading unlimitedly
                     flag_stop = 1
+                    return 0
                     continue
                 label_count |= {label}
                 with tf.gfile.GFile(path_des +
@@ -78,17 +92,16 @@ def tfrecord2jpg(path_res, path_des):
 
 
 def main():
-    path_res = './train.tfrecords'
-    path_des = ['./train/']
     # get empty directory
-    for pad in path_des:
-        if os.path.isdir(pad):
-            if os.listdir(pad):
-                shutil.rmtree(pad)
-                os.mkdir(pad)
+    for i in range(len(PATH)):
+        if os.path.isdir(PATH_DES[i]):
+            if os.listdir(PATH_DES[i]):
+                shutil.rmtree(PATH_DES[i])
+                os.mkdir(PATH_DES[i])
         else:
-            os.mkdir(pad)
-        tfrecord2jpg(path_res, pad)
+            os.mkdir(PATH_DES[i])
+        tfrecord2jpg(PATH_RES[i], PATH_DES[i])
 
 
-main()
+if __name__ == "__main__":
+    main()

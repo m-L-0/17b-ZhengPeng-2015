@@ -3,18 +3,100 @@ import tensorflow as tf
 import time
 import os
 import cv2
-import matplotlib.pyplot as plt
 
 
 # 图片存放位置
-PATH_DES = [r'data_tfrecords/integers_tfrecords/',
-            r'data_tfrecords/alphabets_tfrecords/',
-            r'data_tfrecords/Chinese_letters_tfrecords/']
+PATH_DES = [
+    r'data_tfrecords/integers_tfrecords/integers.tfrecords',
+    r'data_tfrecords/alphabets_tfrecords/alphabets.tfrecords',
+    r'data_tfrecords/Chinese_letters_tfrecords/Chinese_letters.tfrecords'
+    ]
 PATH_RES = [r'data/integers/',
             r'data/alphabets/',
             r'data/Chinese_letters/']
 
 PATH = list(zip(PATH_RES, PATH_DES))
+# transformation between integer <-> string
+integers = {
+    '0': 0,
+    '1': 1,
+    '2': 2,
+    '3': 3,
+    '4': 4,
+    '5': 5,
+    '6': 6,
+    '7': 7,
+    '8': 8,
+    '9': 9
+}
+alphabets = {
+    'A': 0,
+    'B': 1,
+    'C': 2,
+    'D': 3,
+    'E': 4,
+    'F': 5,
+    'G': 6,
+    'H': 7,
+    'I': 8,
+    'J': 9,
+    'K': 10,
+    'L': 11,
+    'M': 12,
+    'N': 13,
+    'O': 14,
+    'P': 15,
+    'Q': 16,
+    'R': 17,
+    'S': 18,
+    'T': 19,
+    'U': 20,
+    'V': 21,
+    'W': 22,
+    'X': 23,
+    'Y': 24,
+    'Z': 25
+}
+provinces = {
+    '藏': 0,
+    '川': 1,
+    '鄂': 2,
+    '甘': 3,
+    '赣': 4,
+    '广': 5,
+    '桂': 6,
+    '贵': 7,
+    '黑': 8,
+    '沪': 9,
+    '吉': 10,
+    '冀': 11,
+    '津': 12,
+    '晋': 13,
+    '京': 14,
+    '辽': 15,
+    '鲁': 16,
+    '蒙': 17,
+    '闽': 18,
+    '宁': 19,
+    '青': 20,
+    '琼': 21,
+    '陕': 22,
+    '苏': 23,
+    '皖': 24,
+    '湘': 25,
+    '新': 26,
+    '渝': 27,
+    '豫': 28,
+    '粤': 29,
+    '云': 30,
+    '浙': 31
+}
+label_ref = [
+    integers,
+    alphabets,
+    provinces
+]
+
 
 # 图片信息
 IMG_HEIGHT = 28
@@ -26,7 +108,7 @@ NUM_VALIDARION = [sum([len(os.listdir(r + i))
 
 
 # 读取图片
-def read_images(path_res):
+def read_images(path_res, label_ref):
     imgs = []
     labels = []
     path_res_dirs = sorted(os.listdir(path_res))
@@ -55,7 +137,7 @@ def read_images(path_res):
                 / ((h + w) * 2 + 4) > 0.5
             # if c >= 1:
             #     img_current_threshed = 255 - img_current_threshed
-            if c > 3 or (c > 1 and if_reverse):
+            if c > 2 or (c > 1 and if_reverse):
                 img_current_threshed = 255 - img_current_threshed
             # img_current_threshed = img_current
             label_current = paths_images[j].split("/")[-2]
@@ -70,8 +152,8 @@ def read_images(path_res):
             #     #        img_current_threshed[h-1, 0],
             #     #        img_current_threshed[h-1, w-1]])
             #     plt.show()
-            imgs.append(img_current_threshed)
-            labels.append(label_current)   # 这里注意, 目前的label仅为0-9
+            imgs.append((img_current_threshed // 255).astype(np.uint8))
+            labels.append(np.uint8(label_ref[label_current]))
     imgs = np.array(imgs)
     labels = np.array(labels)
     return imgs, labels
@@ -87,13 +169,12 @@ def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-def convert(images, labels, name):
+def convert(images, labels, filename):
     # 获取要转换为TFRecord文件的图片数目
     num = images.shape[0]
     print("num:", num)
     print("images.shape:", images.shape)
     # 输出TFRecord文件的文件名
-    filename = name + '.tfrecords'
     print('Writting', filename)
     # 创建一个writer来写TFRecord文件
     writer = tf.python_io.TFRecordWriter(filename)
@@ -114,7 +195,7 @@ def main():
     start_time = time.time()
     for i in range(len(PATH)):
         print('reading images from {} begin'.format(PATH_RES[i]))
-        train_images, train_labels = read_images(PATH_RES[i])
+        train_images, train_labels = read_images(PATH_RES[i], label_ref[i])
         # Slice data here.
         print('convert to tfrecords into {} begin'.format(PATH_DES[i]))
         convert(train_images, train_labels, PATH_DES[i])
