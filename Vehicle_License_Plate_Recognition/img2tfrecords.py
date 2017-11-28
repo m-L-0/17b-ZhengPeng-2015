@@ -7,20 +7,26 @@ import matplotlib.pyplot as plt
 
 
 # 图片存放位置
-PATH_DES = r'data_tfrecords/integers_tfrecords/'
-PATH_RES = r'data/integers/'
+PATH_DES = [r'data_tfrecords/integers_tfrecords/',
+            r'data_tfrecords/alphabets_tfrecords/',
+            r'data_tfrecords/Chinese_letters_tfrecords/']
+PATH_RES = [r'data/integers/',
+            r'data/alphabets/',
+            r'data/Chinese_letters/']
+
+PATH = list(zip(PATH_RES, PATH_DES))
 
 # 图片信息
-IMG_HEIGHT = 227
-IMG_WIDTH = 227
-IMG_CHANNELS = 3
+IMG_HEIGHT = 28
+IMG_WIDTH = 16
+IMG_CHANNELS = 1
 # NUM_TRAIN = 7000
-NUM_VALIDARION = sum([len(os.listdir(PATH_RES + i))
-                      for i in os.listdir(PATH_RES)]) // 4
+NUM_VALIDARION = [sum([len(os.listdir(r + i))
+                       for i in os.listdir(r)]) // 4 for r in PATH_RES]
 
 
 # 读取图片
-def read_images(path_res, path_des):
+def read_images(path_res):
     imgs = []
     labels = []
     path_res_dirs = sorted(os.listdir(path_res))
@@ -65,7 +71,7 @@ def read_images(path_res, path_des):
             #     #        img_current_threshed[h-1, w-1]])
             #     plt.show()
             imgs.append(img_current_threshed)
-            labels.append(np.uint8(label_current))   # 这里注意, 目前的label仅为0-9
+            labels.append(label_current)   # 这里注意, 目前的label仅为0-9
     imgs = np.array(imgs)
     labels = np.array(labels)
     return imgs, labels
@@ -105,28 +111,15 @@ def convert(images, labels, name):
 
 
 def main():
-    print('reading images begin')
     start_time = time.time()
-    train_images, train_labels = read_images(PATH_RES, PATH_DES)
+    for i in range(len(PATH)):
+        print('reading images from {} begin'.format(PATH_RES[i]))
+        train_images, train_labels = read_images(PATH_RES[i])
+        # Slice data here.
+        print('convert to tfrecords into {} begin'.format(PATH_DES[i]))
+        convert(train_images, train_labels, PATH_DES[i])
     duration = time.time() - start_time
-    print("reading images end , cost %d sec" % duration)
-
-    # get validation
-    # validation_images = train_images[:NUM_VALIDARION]
-    # validation_labels = train_labels[:NUM_VALIDARION]
-    # train_images = train_images[NUM_VALIDARION:]
-    # train_labels = train_labels[NUM_VALIDARION:]
-
-    train_images = train_images[:]
-    train_labels = train_labels[:]
-
-    # convert to tfrecords
-    print('convert to tfrecords begin')
-    start_time = time.time()
-    convert(train_images, train_labels, 'train')
-    # convert(validation_images, validation_labels, 'validation')
-    duration = time.time() - start_time
-    print('convert to tfrecords end , cost %d sec' % duration)
+    print('Converting end , total cost = %d sec' % duration)
 
 
 if __name__ == '__main__':
