@@ -3,6 +3,7 @@ import shutil
 import tensorflow as tf
 import time
 import sys
+import cv2
 
 
 # 图片存放位置
@@ -11,7 +12,7 @@ PATH_RES = [
     r'data_tfrecords/integers_tfrecords/test.tfrecords',
     r'data_tfrecords/alphabets_tfrecords/train.tfrecords',
     r'data_tfrecords/alphabets_tfrecords/test.tfrecords',
-    r'data_tfrecords/Chinese_letters_tfrecords/train.tfrecords'
+    r'data_tfrecords/Chinese_letters_tfrecords/train.tfrecords',
     r'data_tfrecords/Chinese_letters_tfrecords/test.tfrecords'
     ]
 PATH_DES = [
@@ -19,7 +20,7 @@ PATH_DES = [
     r'imgs_from_tfrecords/integers/test/',
     r'imgs_from_tfrecords/alphabets/train/',
     r'imgs_from_tfrecords/alphabets/test/',
-    r'imgs_from_tfrecords/Chinese_letters/train/'
+    r'imgs_from_tfrecords/Chinese_letters/train/',
     r'imgs_from_tfrecords/Chinese_letters/test/'
     ]
 
@@ -33,7 +34,7 @@ def tfrecord2jpg(path_res, path_des):
     prev_time = start_time
     idx = 0
 
-    filename_queue = tf.train.string_input_producer([path_res])
+    filename_queue = tf.train.string_input_producer([path_res], num_epochs=1)
 
     # 从 TFRecord 读取内容并保存到 serialized_example 中
     _, serialized_example = reader.read(filename_queue)
@@ -52,48 +53,31 @@ def tfrecord2jpg(path_res, path_des):
     print('Extracting {} has just started.'.format(path_res))
     with tf.Session() as sess:
         # 启动多线程
+        sess.run(tf.local_variables_initializer())
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-        try:
-            flag_stop = 0
-            label_count = set()
-            while not coord.should_stop() or flag_stop:
-                label, image = sess.run([labels, images])
-                image = tf.reshape(image, [28, 16, 1])
-                image = tf.image.convert_image_dtype(image, dtype=tf.uint8)
-                image = tf.image.encode_jpeg(image)
-                if len(label_count) == 10 and label in label_count:
-                    # prevent reading unlimitedly
-                    flag_stop = 1
-                    return 0
-                    continue
-                label_count |= {label}
-                with tf.gfile.GFile(path_des +
-                                    str(idx) +
-                                    '_' +
-                                    str(label) +
-                                    '.jpg', 'wb') as f:
-                    img = sess.run(image)
-                    f.write(img)
-                idx += 1
-                current_time = int(time.time())
-                lasting_time = current_time - start_time
-                interval_time = current_time - prev_time
-                if interval_time >= 1:
-                    sys.stdout.flush()
-                    sys.stdout.write("\rGenerating the {}-th image: {},\
-                                     lasting {} seconds".format(
-                                        idx,
-                                        path_des +
-                                        str(idx) + '_' +
-                                        str(label) + '.jpg',
-                                        lasting_time))
-                    prev_time = current_time
-        except tf.errors.OutOfRangeError as err:
-            print('Extracting {} has been finished.'.format(
-                                                    path_res))
-        finally:
-            coord.request_stop()
+        while not coord.should_stop():
+            try:
+                label, img = sess.run([labels, images])
+            except tf.errors.OutOfRangeError:
+                print("Turn to next folder.")
+                break
+            cv2.imwrite(path_des+"_"+str(idx)+"_"+str(label)+'.jpg', img)
+            idx += 1
+            current_time = int(time.time())
+            lasting_time = current_time - start_time
+            interval_time = current_time - prev_time
+            if interval_time >= 0.1:
+                sys.stdout.flush()
+                sys.stdout.write("\rGenerating the {}-th image: {},\
+                                    lasting {} seconds".format(
+                                    idx,
+                                    path_des +
+                                    str(idx) + '_' +
+                                    str(label) + '.jpg',
+                                    lasting_time))
+                prev_time = current_time
+        coord.request_stop()
         coord.join(threads)
 
 
@@ -105,6 +89,7 @@ def main():
                 shutil.rmtree(PATH_DES[i])
                 os.mkdir(PATH_DES[i])
         else:
+            print(PATH_DES[i])
             os.mkdir(PATH_DES[i])
         tfrecord2jpg(PATH_RES[i], PATH_DES[i])
 

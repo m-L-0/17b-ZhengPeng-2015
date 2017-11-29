@@ -31,66 +31,66 @@ integers = {
     '9': 9
 }
 alphabets = {
-    'A': 0,
-    'B': 1,
-    'C': 2,
-    'D': 3,
-    'E': 4,
-    'F': 5,
-    'G': 6,
-    'H': 7,
-    'I': 8,
-    'J': 9,
-    'K': 10,
-    'L': 11,
-    'M': 12,
-    'N': 13,
-    'O': 14,
-    'P': 15,
-    'Q': 16,
-    'R': 17,
-    'S': 18,
-    'T': 19,
-    'U': 20,
-    'V': 21,
-    'W': 22,
-    'X': 23,
-    'Y': 24,
-    'Z': 25
+    'A': 10,
+    'B': 11,
+    'C': 12,
+    'D': 13,
+    'E': 14,
+    'F': 15,
+    'G': 16,
+    'H': 17,
+    'I': 18,
+    'J': 19,
+    'K': 20,
+    'L': 21,
+    'M': 22,
+    'N': 23,
+    'O': 24,
+    'P': 25,
+    'Q': 26,
+    'R': 27,
+    'S': 28,
+    'T': 29,
+    'U': 30,
+    'V': 31,
+    'W': 32,
+    'X': 33,
+    'Y': 34,
+    'Z': 35
 }
 provinces = {
-    '藏': 0,
-    '川': 1,
-    '鄂': 2,
-    '甘': 3,
-    '赣': 4,
-    '广': 5,
-    '桂': 6,
-    '贵': 7,
-    '黑': 8,
-    '沪': 9,
-    '吉': 10,
-    '冀': 11,
-    '津': 12,
-    '晋': 13,
-    '京': 14,
-    '辽': 15,
-    '鲁': 16,
-    '蒙': 17,
-    '闽': 18,
-    '宁': 19,
-    '青': 20,
-    '琼': 21,
-    '陕': 22,
-    '苏': 23,
-    '皖': 24,
-    '湘': 25,
-    '新': 26,
-    '渝': 27,
-    '豫': 28,
-    '粤': 29,
-    '云': 30,
-    '浙': 31
+    '藏': 36,
+    '川': 37,
+    '鄂': 38,
+    '甘': 39,
+    '赣': 40,
+    '广': 41,
+    '桂': 42,
+    '贵': 43,
+    '黑': 44,
+    '沪': 45,
+    '吉': 46,
+    '冀': 47,
+    '津': 48,
+    '晋': 49,
+    '京': 50,
+    '辽': 51,
+    '鲁': 52,
+    '蒙': 53,
+    '闽': 54,
+    '宁': 55,
+    '青': 56,
+    '琼': 57,
+    '陕': 58,
+    '苏': 59,
+    '皖': 60,
+    '湘': 61,
+    '新': 62,
+    '渝': 63,
+    '豫': 64,
+    '粤': 65,
+    '云': 66,
+    '浙': 67
 }
 label_ref = [
     integers,
@@ -105,7 +105,7 @@ IMG_WIDTH = 16
 IMG_CHANNELS = 1
 # NUM_TRAIN = 7000
 NUM_VALIDARION = [sum([len(os.listdir(r + i))
-                       for i in os.listdir(r)]) // 4 for r in PATH_RES]
+                       for i in os.listdir(r)]) // 5 for r in PATH_RES]
 
 
 # 读取图片
@@ -120,7 +120,9 @@ def read_images(path_res, label_ref, num_validation):
         del t_lst
         for j in range(len(paths_images)):
             c = 0
-            img_current = cv2.resize(cv2.imread(paths_images[j], 0), (16, 28))
+            img = cv2.imread(paths_images[j], 0)
+            img_blur = cv2.bilateralFilter(img, 3, 45, 45)
+            img_current = cv2.resize(img_blur, (28, 28))
             ret, img_current_threshed = cv2.threshold(img_current,
                                                       127, 255,
                                                       cv2.THRESH_OTSU)
@@ -161,10 +163,10 @@ def read_images(path_res, label_ref, num_validation):
     labels = labels.reshape(labels.shape[0], -1)
     data = np.hstack((labels, imgs))
     data = shuffle(data)
-    train_labels = data[:num_validation, 0]
-    train_images = data[:num_validation, 1:]
-    test_labels = data[num_validation:, 0]
-    test_images = data[num_validation:, 1:]
+    test_labels = data[:num_validation, 0]
+    test_images = data[:num_validation, 1:]
+    train_labels = data[num_validation:, 0]
+    train_images = data[num_validation:, 1:]
     return train_labels, train_images, test_labels, test_images
 
 
