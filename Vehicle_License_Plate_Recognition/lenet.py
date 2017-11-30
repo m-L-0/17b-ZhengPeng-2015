@@ -1,9 +1,27 @@
 import tensorflow as tf
 import tfrecords2array
 import numpy as np
+from keras.utils import to_categorical
+import matplotlib.pyplot as plt
+from collections import OrderedDict
 
 
 def lenet(char_classes):
+
+    # ref
+    recall_rate = OrderedDict().fromkeys([
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+        'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+        'u', 'v', 'w', 'x', 'y', 'z',
+        '藏', '川', '鄂', '甘', '赣', '广', '桂', '贵', '黑',
+        '沪', '吉', '冀', '津', '晋', '京', '辽', '鲁', '蒙',
+        '闽', '宁', '青', '琼', '陕', '苏', '皖', '湘', '新',
+        '渝', '豫', '粤', '云', '浙'
+        ])
+    for i in recall_rate.keys():
+        recall_rate[i] = 1
+
     y_train = []
     x_train = []
     y_test = []
@@ -104,7 +122,7 @@ def lenet(char_classes):
                                                   reduction_indices=[1]))
 
     # 选择优化器，并让优化器最小化损失函数/收敛, 反向传播
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+    train_step = tf.train.AdamOptimizer(1e-5).minimize(cross_entropy)
 
     # tf.argmax()返回的是某一维度上其数据最大所在的索引值，在这里即代表预测值和真实值
     # 判断预测值y和真实值y_中最大数的索引是否一致，y的值为1-class_num概率
@@ -116,29 +134,39 @@ def lenet(char_classes):
     # 开始训练
     saver = tf.train.Saver()
     sess.run(tf.global_variables_initializer())
+    acc_train_train = []
+    acc_train_test = []
     batch_size = 64
-    print("Training steps=" + str(x_train.shape[0]*7 // batch_size))
-    for i in range(0, x_train.shape[0]*7, batch_size):
-        if (i % x_train.shape[0]) > ((i + batch_size) % x_train.shape[0]):
+    epoch_train = 200001     # restricted by the hardware in my computer
+    print("Training steps=" + str(epoch_train))
+    for i in range(epoch_train):
+        if (i*batch_size % x_train.shape[0]) > ((i + 1)*batch_size %
+                                                x_train.shape[0]):
             x_data_train = np.vstack(
-                (x_train[i % x_train.shape[0]:],
-                 x_train[:(i+batch_size) % x_train.shape[0]]))
+                (x_train[i*batch_size % x_train.shape[0]:],
+                 x_train[:(i+1)*batch_size % x_train.shape[0]]))
             y_data_train = np.vstack(
-                (y_train[i % y_train.shape[0]:],
-                 y_train[:(i+batch_size) % y_train.shape[0]]))
-            x_data_test = np.vstack((x_test[i % x_test.shape[0]:],
-                                    x_test[:(i+batch_size) % x_test.shape[0]]))
-            y_data_test = np.vstack((y_test[i % y_test.shape[0]:],
-                                    y_test[:(i+batch_size) % y_test.shape[0]]))
+                (y_train[i*batch_size % y_train.shape[0]:],
+                 y_train[:(i+1)*batch_size % y_train.shape[0]]))
+            x_data_test = np.vstack(
+                (x_test[i*batch_size % x_test.shape[0]:],
+                 x_test[:(i+1)*batch_size % x_test.shape[0]]))
+            y_data_test = np.vstack(
+                (y_test[i*batch_size % y_test.shape[0]:],
+                 y_test[:(i+1)*batch_size % y_test.shape[0]]))
         else:
             x_data_train = x_train[
-                i % x_train.shape[0]:(i+batch_size) % x_train.shape[0]]
+                i*batch_size % x_train.shape[0]:
+                (i+1)*batch_size % x_train.shape[0]]
             y_data_train = y_train[
-                i % y_train.shape[0]:(i+batch_size) % y_train.shape[0]]
+                i*batch_size % y_train.shape[0]:
+                (i+1)*batch_size % y_train.shape[0]]
             x_data_test = x_test[
-                i % x_test.shape[0]:(i+batch_size) % x_test.shape[0]]
+                i*batch_size % x_test.shape[0]:
+                (i+1)*batch_size % x_test.shape[0]]
             y_data_test = y_test[
-                i % y_test.shape[0]:(i+batch_size) % y_test.shape[0]]
+                i*batch_size % y_test.shape[0]:
+                (i+1)*batch_size % y_test.shape[0]]
         if i % 640 == 0:
             train_accuracy = accuracy.eval(
                 feed_dict={x: x_data_train, y_: y_data_train, keep_prob: 1.0})
@@ -146,41 +174,74 @@ def lenet(char_classes):
                 feed_dict={x: x_data_test, y_: y_data_test, keep_prob: 1.0})
             print("step {}, training accuracy={}, testing accuracy={}".format(
                 i, train_accuracy, test_accuracy))
+            acc_train_train.append(train_accuracy)
+            acc_train_test.append(test_accuracy)
         train_step.run(feed_dict={
             x: x_data_train, y_: y_data_train, keep_prob: 0.5})
-    saver.save(sess, './my_model/')
+    print("saving model...")
+    save_path = saver.save(sess, "./my_model/model.ckpt")
+    print("save model:{0} Finished".format(save_path))
 
     batch_size_test = 64
     epoch_test = y_test.shape[0] // batch_size_test + 1
-    sum = 0
+    acc_test = 0
+    recall_rate = np.zeros((64, 68), dtype=np.float32)
     for i in range(epoch_test):
-        if (i % x_test.shape[0]) > ((i + batch_size_test) % x_test.shape[0]):
+        if (i*batch_size_test % x_test.shape[0]) > ((i + 1)*batch_size_test %
+                                                    x_test.shape[0]):
             x_data_test = np.vstack((
-                x_test[i % x_train.shape[0]:],
-                x_test[:(i+batch_size_test) % x_test.shape[0]]))
+                x_test[i*batch_size_test % x_train.shape[0]:],
+                x_test[:(i+1)*batch_size_test % x_test.shape[0]]))
             y_data_test = np.vstack((
-                y_test[i % y_test.shape[0]:],
-                y_test[:(i+batch_size_test) % y_test.shape[0]]))
+                y_test[i*batch_size_test % y_test.shape[0]:],
+                y_test[:(i+1)*batch_size_test % y_test.shape[0]]))
         else:
             x_data_test = x_test[
-                i % x_test.shape[0]:(i+batch_size_test) % x_test.shape[0]]
+                i*batch_size_test % x_test.shape[0]:
+                (i+1)*batch_size_test % x_test.shape[0]]
             y_data_test = y_test[
-                i % y_test.shape[0]:(i+batch_size_test) % y_test.shape[0]]
+                i*batch_size_test % y_test.shape[0]:
+                (i+1)*batch_size_test % y_test.shape[0]]
+        # plt.imshow(x_data_test[0].reshape(28, 28), cmap="gray")
+        # plt.show()
+        # Calculate batch loss and accuracy
         c = accuracy.eval(feed_dict={
             x: x_data_test, y_: y_data_test, keep_prob: 1.0})
-        sum += c
-        # print("test accuracy %g" %  c)
-    print("test accuracy %g" % (sum / epoch_test))
+        acc_test += c / epoch_test
+        print("{}-th test accuracy={}".format(i, acc_test))
+    recall_rate = np.sum(recall_rate, axis=0)
+    print("At last, test accuracy={}".format(acc_test))
 
     print("Finish!")
+    return acc_train_train, acc_train_test, acc_test, recall_rate
+
+
+def plt_err_and_recall(acc_train_train, acc_train_test, acc_test, recall_rate):
+    plt.figure(1)
+    p1, p2 = plt.plot(list(range(len(acc_train_train))),
+                      acc_train_train, 'r>',
+                      list(range(len(acc_train_test))),
+                      acc_train_test, 'b-')
+    plt.legend(handles=[p1, p2], labels=["training_acc", "testing_acc"])
+    plt.title("Accuracies During Training")
+    fg, ax = plt.subplots(1, 1, figsize=(12, 6))
+    ax.plot(recall_rate, list(range(len(recall_rate))), '^')
+    ax.hlines(list(range(len(recall_rate))), [0], recall_rate, lw=2)
+    ax.set_xlabel('Recall rate')
+    ax.set_ylabel('Idx of elem')
+    ax.set_title('Statistics on Recall Rates')
+    plt.show()
 
 
 def main():
     # integers:         4679
     # alphabets:        9796
     # Chinese_letters:  3974
-    train_lst = ['integers', 'alphabets']
-    lenet(train_lst)
+    # training_set : testing_set == 4 : 1
+    train_lst = ['alphabets', 'integers', 'alphabets',
+                 'Chinese_letters', 'integers']
+    acc_train_train, acc_train_test, acc_test, recall_rate = lenet(train_lst)
+    plt_err_and_recall(acc_train_train, acc_train_test, acc_test, recall_rate)
 
 
 if __name__ == '__main__':

@@ -53,7 +53,7 @@ def tfrecord2array(path_res):
 
         coord.request_stop()
         coord.join(threads)
-    return to_categorical(np.array(lbls), num_classes=70), np.array(imgs)
+    return to_categorical(np.array(lbls), num_classes=68), np.array(imgs)
 
 
 def main():

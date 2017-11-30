@@ -11,11 +11,11 @@ def do_the_statistics(path_dir):
     counter = {}
     for i in dir_lst:
         counter[i] = len(os.listdir(path_dir+i))
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(1, 1, figsize=(16, 8))
     ax.bar(counter.keys(), counter.values())
     ax.set_xlabel('Sample Labels')
     ax.set_ylabel('Quantities')
-    ax.set_title(r'Samples\' distributions in {}'.format(path_dir))
+    ax.set_title(r"Samples' distributions in {}".format(path_dir))
     fig.tight_layout()
     plt.show()
 
