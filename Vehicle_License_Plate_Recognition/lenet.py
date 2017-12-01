@@ -1,26 +1,11 @@
 import tensorflow as tf
 import tfrecords2array
 import numpy as np
-from keras.utils import to_categorical
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 
 
 def lenet(char_classes):
-
-    # ref
-    recall_rate = OrderedDict().fromkeys([
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-        'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-        'u', 'v', 'w', 'x', 'y', 'z',
-        '藏', '川', '鄂', '甘', '赣', '广', '桂', '贵', '黑',
-        '沪', '吉', '冀', '津', '晋', '京', '辽', '鲁', '蒙',
-        '闽', '宁', '青', '琼', '陕', '苏', '皖', '湘', '新',
-        '渝', '豫', '粤', '云', '浙'
-        ])
-    for i in recall_rate.keys():
-        recall_rate[i] = 1
 
     y_train = []
     x_train = []
@@ -137,7 +122,7 @@ def lenet(char_classes):
     acc_train_train = []
     acc_train_test = []
     batch_size = 64
-    epoch_train = 200001     # restricted by the hardware in my computer
+    epoch_train = 50001     # restricted by the hardware in my computer
     print("Training steps=" + str(epoch_train))
     for i in range(epoch_train):
         if (i*batch_size % x_train.shape[0]) > ((i + 1)*batch_size %
@@ -185,7 +170,6 @@ def lenet(char_classes):
     batch_size_test = 64
     epoch_test = y_test.shape[0] // batch_size_test + 1
     acc_test = 0
-    recall_rate = np.zeros((64, 68), dtype=np.float32)
     for i in range(epoch_test):
         if (i*batch_size_test % x_test.shape[0]) > ((i + 1)*batch_size_test %
                                                     x_test.shape[0]):
@@ -209,14 +193,13 @@ def lenet(char_classes):
             x: x_data_test, y_: y_data_test, keep_prob: 1.0})
         acc_test += c / epoch_test
         print("{}-th test accuracy={}".format(i, acc_test))
-    recall_rate = np.sum(recall_rate, axis=0)
     print("At last, test accuracy={}".format(acc_test))
 
     print("Finish!")
-    return acc_train_train, acc_train_test, acc_test, recall_rate
+    return acc_train_train, acc_train_test, acc_test
 
 
-def plt_err_and_recall(acc_train_train, acc_train_test, acc_test, recall_rate):
+def plot_acc(acc_train_train, acc_train_test, acc_test):
     plt.figure(1)
     p1, p2 = plt.plot(list(range(len(acc_train_train))),
                       acc_train_train, 'r>',
@@ -224,12 +207,6 @@ def plt_err_and_recall(acc_train_train, acc_train_test, acc_test, recall_rate):
                       acc_train_test, 'b-')
     plt.legend(handles=[p1, p2], labels=["training_acc", "testing_acc"])
     plt.title("Accuracies During Training")
-    fg, ax = plt.subplots(1, 1, figsize=(12, 6))
-    ax.plot(recall_rate, list(range(len(recall_rate))), '^')
-    ax.hlines(list(range(len(recall_rate))), [0], recall_rate, lw=2)
-    ax.set_xlabel('Recall rate')
-    ax.set_ylabel('Idx of elem')
-    ax.set_title('Statistics on Recall Rates')
     plt.show()
 
 
@@ -240,8 +217,8 @@ def main():
     # training_set : testing_set == 4 : 1
     train_lst = ['alphabets', 'integers', 'alphabets',
                  'Chinese_letters', 'integers']
-    acc_train_train, acc_train_test, acc_test, recall_rate = lenet(train_lst)
-    plt_err_and_recall(acc_train_train, acc_train_test, acc_test, recall_rate)
+    acc_train_train, acc_train_test, acc_test = lenet(train_lst)
+    plot_acc(acc_train_train, acc_train_test, acc_test)
 
 
 if __name__ == '__main__':

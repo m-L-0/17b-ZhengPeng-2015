@@ -173,8 +173,8 @@ def lenet(char_classes):
         recall_sum = np.sum(cv2.bitwise_and(pred_value, y_data_test), axis=0)
         class_sum = np.sum(y_data_test, axis=0)
         class_sums.append(class_sum)
-        print(recall_sum)
-        input()
+        # print(recall_sum)
+        # input()
         for idx in range(len(recall_sum)):
             recall_rate[str(list(recall_rate.keys())[idx])] += recall_sum[idx]
             class_count[str(list(class_count.keys())[idx])] += class_sum[idx]
@@ -188,7 +188,6 @@ def lenet(char_classes):
     print("class_count:\n", class_count)
     print("class_sums:", np.sum(np.array(class_sums), axis=0))
     print("Restored acc_test={}".format(acc_test))
-    input()
     return recall_rate
 
 
@@ -197,7 +196,7 @@ def main():
     # alphabets:        9796
     # Chinese_letters:  3974
     # training_set : testing_set == 4 : 1
-    train_lst = ['alphabets', 'Chinese_letters', 'integers']
+    train_lst = ['alphabets', 'integers']
     recall_rate = lenet(train_lst)
     recall_rate_values = recall_rate.values()
     _, ax = plt.subplots(1, 1, figsize=(12, 6))
