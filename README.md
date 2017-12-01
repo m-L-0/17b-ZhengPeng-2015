@@ -15,3 +15,31 @@
         + [Capsule neural network with 89% accuracy](https://github.com/m-L-0/17b-ZhengPeng-2015/tree/master/FashionMNIST_Challenge/CapsNet-Fashion-MNIST)
 
 
+2. Vehicle_Lincense_Plate_Recognition
+    - Data Transformation:
+        + img <--> tfrecords -> array
+    - Construct Lenet-5
+    - Restore Lenet-5
+        > In saved model:
+
+        | matches | Validation Accuracy |
+        | :-----: | :------: |
+        | 字母+数字+汉字 | 98.08% |
+        | 字母+数字 | 99.35% |
+        | 汉字 | 97.48% |
+        | 字母 | 99.40% |
+        | 数字 | 99.27% |
+        &emsp;&emsp;**Accuracies on training set and test set**
+        ![ACC](./Vehicle_License_Plate_Recognition/images/Acc_in_training_on_alp_int_lett.png)
+        &emsp;&emsp;**Recall Rates on Alphabet, integers and Chinese_letters**
+        ![alp_int_lett](./Vehicle_License_Plate_Recognition/images/Recall_rate_in_test_on_alp_int_lett.png)
+        &emsp;&emsp;**Recall Rates on Alphabets and Integers**
+        ![alp_int](./Vehicle_License_Plate_Recognition/images/Recall_rate_in_test_on_alp_int.png)
+        &emsp;&emsp;**Recall Rates on Chinese_letters**
+        ![ChineseLetters](./Vehicle_License_Plate_Recognition/images/Recall_rate_in_test_on_ChineseLetters.png)
+        &emsp;&emsp;**Recall Rates on Alphabet**
+        ![alphabets](./Vehicle_License_Plate_Recognition/images/Recall_rate_in_test_on_alphabets.png)
+        &emsp;&emsp;**Recall Rates on Integers**
+        ![integers](./Vehicle_License_Plate_Recognition/images/Recall_rate_in_test_on_integers.png)
+
+
