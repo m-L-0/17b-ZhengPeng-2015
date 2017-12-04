@@ -18,7 +18,7 @@
 2. Vehicle_Lincense_Plate_Recognition
     + Extract Characters:
         - Effects:
-            + ![ori](./Vehicle_License_Plate_Recognition/images/car.jpg)
+            + ![ori](./Vehicle_License_Plate_Recognition/images/cars/car_0.jpg)
             
             + ___--Canny--Denoise--Morphology--Find\_contours--get\_rects--Select\_the\_very\_rect--Cut\_out\_the\_plate\_area-->___
             
