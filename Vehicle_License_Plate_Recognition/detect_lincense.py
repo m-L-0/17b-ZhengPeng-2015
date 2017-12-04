@@ -23,25 +23,35 @@ def detect_lincense(image):
     # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (21, 7))
     # closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
     # closed = cv2.erode(closed, None, iterations=4)
-    # closed = cv2.dilate(closed, None, iterations=4)
-    # plt.imshow(edges_dilated, cmap="gray")
-    # plt.show()
+    # edges_dilated = cv2.dilate(closed, None, iterations=4)
+    plt.imshow(edges_dilated, cmap="gray")
+    plt.show()
+    img_cp = img.copy()
     (_, cnts, _) = cv2.findContours(edges_dilated.copy(), cv2.RETR_EXTERNAL,
                                     cv2.CHAIN_APPROX_SIMPLE)
     cs = sorted(cnts, key=cv2.contourArea, reverse=True)
     # print("cs:", cs)
     shape_rate_criteria = 3.5
     min_shape_rate = 7
+    img_area = img.shape[0] * img.shape[1]
     for c in cs:
         # compute the rotated bounding box of the largest contour
         rect = cv2.minAreaRect(c)
         box = np.int0(cv2.boxPoints(rect))
         # print("current box point:", box)
+        sorted_box = np.array(sorted(box.tolist(), key=lambda x: x[0]))
+        slope = ((((sorted_box[-1, 1] + sorted_box[-2, 1])/2) -
+                  ((sorted_box[0, 1] + sorted_box[1, 1])/2)) /
+                 (((sorted_box[-1, 0] + sorted_box[-2, 0])/2) -
+                  ((sorted_box[0, 0] + sorted_box[1, 0])/2)))
+        # print("sorted_box={}".format(sorted_box))
+        # print("slope:", slope)
         height, width = (max(box[:, 1]) - min(box[:, 1]),
                          max(box[:, 0]) - min(box[:, 0]))
         shape_rate = width / height
         if (abs(shape_rate - shape_rate_criteria) <
-           abs(min_shape_rate - shape_rate_criteria)) and 10 < height < 100:
+           abs(min_shape_rate - shape_rate_criteria)) and 10 < height < 99 and\
+           img_area / 300 < width*height < img_area / 20 and abs(slope) < 0.3:
             min_shape_rate = shape_rate
             extract_rect = box
             # print("shape_rate={}, distance={}".format(
@@ -49,7 +59,6 @@ def detect_lincense(image):
 
         # draw a bounding box arounded the detected barcode and display the
         # image
-        # img_cp = img.copy()
         # cv2.drawContours(img_cp, [box], -1, (0, 255, 0), 3)
         # plt.imshow(img_cp)
         # plt.show()
@@ -62,7 +71,7 @@ def detect_lincense(image):
 
 
 def main():
-    image = "./car.jpg"
+    image = "./images/cars/car_2.jpg"
     plate_area = detect_lincense(image)
     plt.imshow(cv2.cvtColor(plate_area, cv2.COLOR_BGR2RGB))
     plt.show()

@@ -35,9 +35,56 @@ def split_lincense_horizontally(image):
         else:
             break
     thr = thr[::-1, :]
+    if np.sum(thr[:1, :]) * 2 > 255 * thr.shape[1]:
+        thr = 255 - thr
+    # smooth bottom and top
+    for i in range(thr.shape[0]-1, -1, -1):
+        jump_counter = 0
+        prev_value = thr[i][0]
+        is_jump = 0     # the step must be larger than the criteria
+        for j in thr[i]:
+            is_jump += 1
+            if j != prev_value:
+                if is_jump > 3:     # if the step is satisfied to the condition
+                    jump_counter += 1
+                prev_value = j
+                is_jump = 0
+        if jump_counter < 12:
+            thr = thr[:i]
+        else:
+            break
+    thr = thr[::-1]
+    for i in range(thr.shape[0]-1, -1, -1):
+        jump_counter = 0
+        prev_value = thr[i][0]
+        is_jump = 0     # the step must be larger than the criteria
+        for j in thr[i]:
+            is_jump += 1
+            if j != prev_value:
+                if is_jump > 3:     # if the step is satisfied to the condition
+                    jump_counter += 1
+                prev_value = j
+                is_jump = 0
+        if jump_counter < 12:
+            thr = thr[:i]
+        else:
+            break
+    thr = thr[::-1]
+    if thr[:, 0].all():
+        cv2.floodFill(
+            thr, np.zeros((thr.shape[0]+2, thr.shape[1]+2), dtype=np.uint8),
+            (0, 0), 0)
+    # floodFill to delete the vertical white space on both sides
+    if thr[:, -1].all():
+        cv2.floodFill(
+            thr, np.zeros((thr.shape[0]+2, thr.shape[1]+2), dtype=np.uint8),
+            (thr.shape[1]-1, 0), 0)
+    plt.imshow(thr, cmap="gray")
+    plt.title("floodFill")
+    plt.show()
 
     # Morphology
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 3))
     kernel1 = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
     thr_without_circle = cv2.morphologyEx(
         cv2.dilate(thr, kernel), cv2.MORPH_CLOSE, kernel1)
@@ -57,6 +104,10 @@ def split_lincense_horizontally(image):
     kernel2 = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 5))
     thr_without_circle_and = cv2.bitwise_and(
         cv2.dilate(thr_without_circle, kernel2), thr)
+    # fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12, 6))
+    # ax0.imshow(thr_without_circle, cmap="gray")
+    # ax1.imshow(thr_without_circle_and, cmap="gray")
+    # plt.show()
 
     # cut out the all-black borders
     for i in range(thr_without_circle_and.shape[1]):
@@ -94,6 +145,7 @@ def split_lincense_horizontally(image):
     white_spaces = np.array(black_spaces).flatten().tolist()
     white_spaces.append(thr_without_circle_and.shape[1])
     white_spaces.insert(0, 0)
+    # print("white_spaces:", white_spaces)
     split_imgs = []
     for i in range(0, len(white_spaces), 2):
         split_imgs.append(
@@ -103,8 +155,9 @@ def split_lincense_horizontally(image):
 
 
 def main():
-    image = "./0.jpg"
+    image = "./images/cars/car_0.jpg"
     split_imgs = split_lincense_horizontally(image)
+    print("split_imgs:", split_imgs)
     for i in split_imgs:
         plt.imshow(i, cmap="gray")
         plt.show()

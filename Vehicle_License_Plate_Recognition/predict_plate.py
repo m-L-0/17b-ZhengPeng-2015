@@ -1,52 +1,37 @@
 import tensorflow as tf
-import tfrecords2array
 import numpy as np
 from keras.utils import to_categorical
 import matplotlib.pyplot as plt
 import cv2
+import extract_figures
 from collections import OrderedDict
+import os
+from matplotlib import rcParams
+from matplotlib.font_manager import FontProperties
+myfont = FontProperties(fname='/usr/share/fonts/truetype/simhei.ttf', size=20)
+rcParams['axes.unicode_minus'] = False
 
 
-def restore_lenet(char_classes):
-
-    # ref
-    recall_rate = OrderedDict().fromkeys([
+def predict_plate(plates):
+    characters_ref = OrderedDict().fromkeys([
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-        'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-        'u', 'v', 'w', 'x', 'y', 'z',
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+        'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+        'U', 'V', 'W', 'X', 'Y', 'Z',
         '藏', '川', '鄂', '甘', '赣', '广', '桂', '贵', '黑',
         '沪', '吉', '冀', '津', '晋', '京', '辽', '鲁', '蒙',
         '闽', '宁', '青', '琼', '陕', '苏', '皖', '湘', '新',
         '渝', '豫', '粤', '云', '浙'
         ])
-    for i in recall_rate.keys():
-        recall_rate[i] = 0.0001
-    class_count = recall_rate.copy()
+    characters_ref_keys = list(characters_ref.keys())
     # y_train = []
     # x_train = []
-    y_test = []
-    x_test = []
-    for char_class in char_classes:
-        # train_data = tfrecords2array.tfrecord2array(
-        #     r"./data_tfrecords/" + char_class + "_tfrecords/train.tfrecords")
-        test_data = tfrecords2array.tfrecord2array(
-            r"./data_tfrecords/" + char_class + "_tfrecords/test.tfrecords")
-        # y_train.append(train_data[0])
-        # x_train.append(train_data[1])
-        y_test.append(test_data[0])
-        x_test.append(test_data[1])
-    for i in [y_test, x_test]:      # y_train, x_train,
-        for j in i:
-            print(j.shape)
-    # y_train = np.vstack(y_train)
-    # x_train = np.vstack(x_train)
-    y_test = np.vstack(y_test)
-    x_test = np.vstack(x_test)
-    class_num = y_test.shape[-1]
+    y_test = np.zeros((7, 68), dtype=np.uint8)
+    x_test = np.array(plates)
+    # print("y_test.shape={}".format(y_test.shape))
+    # print("x_test.shape={}".format(x_test.shape))
 
-    # print("x_train.shape=" + str(x_train.shape))
-    print("x_test.shape=" + str(x_test.shape))
+    class_num = y_test.shape[-1]
     sess = tf.InteractiveSession()
 
     x = tf.placeholder("float", shape=[None, 784])
@@ -120,10 +105,10 @@ def restore_lenet(char_classes):
 
     # tf.argmax()返回的是某一维度上其数据最大所在的索引值，在这里即代表预测值和真实值
     # 判断预测值y和真实值y_中最大数的索引是否一致，y的值为1-class_num概率
-    correct_prediction = tf.equal(pred_class_index, tf.argmax(y_, 1))
+    # correct_prediction = tf.equal(pred_class_index, tf.argmax(y_, 1))
 
     # 用平均值来统计测试准确率
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    # accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # 开始训练
     saver = tf.train.Saver()
@@ -137,13 +122,12 @@ def restore_lenet(char_classes):
     #     x: x_test, y_: y_test, keep_prob: 1.0
     # })
     #
-    batch_size_test = 64
+    batch_size_test = 1
     if not y_test.shape[0] % batch_size_test:
         epoch_test = y_test.shape[0] // batch_size_test
     else:
         epoch_test = y_test.shape[0] // batch_size_test + 1
-    acc_test = 0
-    class_sums = []
+    pred_values = []
     for i in range(epoch_test):
         if (i*batch_size_test % x_test.shape[0]) > (((i+1)*batch_size_test) %
                                                     x_test.shape[0]):
@@ -166,32 +150,9 @@ def restore_lenet(char_classes):
         pred_value = to_categorical(np.squeeze(
             sess.run([pred_class_index], feed_dict={
                    x: x_data_test, y_: y_data_test, keep_prob: 1.0})), 68)
-        print("{}-th pred_value={}".format(i, np.argmax(pred_value, 1)))
-        # print("{}-th y_data_test={}".format(i, y_data_test))
-        # print("\nCover:")
-        # print("pred_value:", pred_value)
-        # print("y_data_test:", y_data_test)
-        # input()
-        recall_sum = np.sum(cv2.bitwise_and(pred_value, y_data_test), axis=0)
-        class_sum = np.sum(y_data_test, axis=0)
-        class_sums.append(class_sum)
-        # print(recall_sum)
-        # input()
-        for idx in range(len(recall_sum)):
-            recall_rate[str(list(recall_rate.keys())[idx])] += recall_sum[idx]
-            class_count[str(list(class_count.keys())[idx])] += class_sum[idx]
-        # print(recall_rate)
-        c = accuracy.eval(feed_dict={
-            x: x_data_test, y_: y_data_test, keep_prob: 1.0})
-        acc_test += c / epoch_test
-    for i in list(recall_rate.keys()):
-        recall_rate[i] /= class_count[i]
-
-    print("recall_rate:\n", recall_rate)
-    print("class_count:\n", class_count)
-    print("class_sums:", np.sum(np.array(class_sums), axis=0))
-    print("Restored acc_test={}".format(acc_test))
-    return recall_rate
+        # print("{}-th pred_value={}".format(i, pred_value))
+        pred_values.append(characters_ref_keys[(np.argmax(pred_value))])
+    return pred_values
 
 
 def main():
@@ -199,17 +160,22 @@ def main():
     # alphabets:        9796
     # Chinese_letters:  3974
     # training_set : testing_set == 4 : 1
-    test_lst = ['alphabets', 'integers', 'Chinese_letters']
-    recall_rate = restore_lenet(test_lst)
-    recall_rate_values = recall_rate.values()
-    _, ax = plt.subplots(1, 1, figsize=(12, 6))
-    ax.plot(list(recall_rate_values), list(range(len(recall_rate_values))),
-            '^')
-    ax.hlines(list(range(len(recall_rate_values))), [0], recall_rate_values,
-              lw=2)
-    ax.set_xlabel('Recall rate')
-    ax.set_ylabel('Idx of elem')
-    ax.set_title('Statistics on Recall Rates')
+    # matplotlib 显示中文
+    plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
+    plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
+    images = ["./images/cars/"+i for i in sorted(os.listdir("./images/cars/"))]
+    for i in range(len(images)-1, -1, -1):
+        if images[i].split(".")[-1] != "jpg":
+            images.pop(i)
+    print("images:", images)
+    # for image in images:
+    image = images[0]
+    plate = extract_figures.extract_figures(image)
+    pred_values = predict_plate(plate)
+    pred_values.insert(2, '·')
+    print("The License Plate is: {}".format(pred_values))
+    plt.imshow(cv2.cvtColor(cv2.imread(image), cv2.COLOR_BGR2RGB))
+    plt.title(u''.join(pred_values), fontproperties=myfont)
     plt.show()
 
 
