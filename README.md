@@ -20,9 +20,13 @@
         - Effects:
             + ![ori](./Vehicle_License_Plate_Recognition/images/cars/car_0.jpg)
             
+            + ![edge](./Vehicle_License_Plate_Recognition/images/cars/recognition/edge_car_0.png)
+            
             + ___--Canny--Denoise--Morphology--Find\_contours--get\_rects--Select\_the\_very\_rect--Cut\_out\_the\_plate\_area-->___
             
             + ![plate](./Vehicle_License_Plate_Recognition/images/plate.png)
+            
+            + ![characters](./Vehicle_License_Plate_Recognition/images/cars/recognition/characters_car_0.png)
             
             + ___--Border\_denoise--Thresholding--Denoise--Kick\_out\_white\_circle\_dot--Get\_vertical\_split\_lines--split_characters-->___
             
@@ -59,8 +63,6 @@
             &emsp;&emsp;**Recall Rates on Integers**
             ![integers](./Vehicle_License_Plate_Recognition/images/Recall_rate_in_test_on_integers.png)
     + Combination:
-        - ![edge](./Vehicle_License_Plate_Recognition/images/cars/recognition/edge_car_0.png)
-        - ![characters](./Vehicle_License_Plate_Recognition/images/cars/recognition/characters_car_0.png)
         - ![show](./Vehicle_License_Plate_Recognition/images/cars/recognition/Recognition_car_0.png)
 
 
