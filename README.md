@@ -59,8 +59,8 @@
             &emsp;&emsp;**Recall Rates on Integers**
             ![integers](./Vehicle_License_Plate_Recognition/images/Recall_rate_in_test_on_integers.png)
     + Combination:
-        - ![characters](./Vehicle_License_Plate_Recognition/images/cars/recognition/characters_car_0.png)
         - ![edge](./Vehicle_License_Plate_Recognition/images/cars/recognition/edge_car_0.png)
+        - ![characters](./Vehicle_License_Plate_Recognition/images/cars/recognition/characters_car_0.png)
         - ![show](./Vehicle_License_Plate_Recognition/images/cars/recognition/Recognition_car_0.png)
 
 
